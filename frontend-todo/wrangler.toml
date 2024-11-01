@@ -62,6 +62,10 @@ pages_build_output_dir = "./build/client"
 # binding = "MY_SERVICE"
 # service = "my-service"
 
+[[services]]
+binding = "TODO_SERVICE"
+service = "service-todo"
+
 # To use different bindings for preview and production environments, follow the examples below.
 # When using environment-specific overrides for bindings, ALL bindings must be specified on a per-environment basis.
 # Docs: https://developers.cloudflare.com/pages/functions/wrangler-configuration#environment-specific-overrides
