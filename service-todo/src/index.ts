@@ -1,50 +1,22 @@
-import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
+import { WorkerEntrypoint } from "cloudflare:workers";
 
-/**
- * Welcome to Cloudflare Workers! This is your first Durable Objects application.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your Durable Object in action
- * - Run `npm run deploy` to publish your application
- *
- * Bind resources to your worker in `wrangler.toml`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/durable-objects
- */
-
-/** A Durable Object's behavior is defined in an exported Javascript class */
-export class TodoDurableObject extends DurableObject {
-	/**
-	 * The constructor is invoked once upon creation of the Durable Object, i.e. the first call to
-	 * 	`DurableObjectStub::get` for a given identifier (no-op constructors can be omitted)
-	 *
-	 * @param ctx - The interface for interacting with Durable Object state
-	 * @param env - The interface to reference bindings declared in wrangler.toml
-	 */
-	constructor(ctx: DurableObjectState, env: Env) {
-		super(ctx, env);
-	}
-
-	/**
-	 * The Durable Object exposes an RPC method sayHello which will be invoked when when a Durable
-	 *  Object instance receives a request from a Worker via the same method invocation on the stub
-	 *
-	 * @param name - The name provided to a Durable Object instance from a Worker
-	 * @returns The greeting to be sent back to the Worker
-	 */
-	async sayHello(name: string): Promise<string> {
-		return `Hello, ${name}!`;
-	}
-}
+import { drizzle } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client/web";
+import { todos } from "./db/schema";
 
 export default class TodoService extends WorkerEntrypoint {
-	async getTodos(userID: string) {
-		const todos = [
-			{ id: 1, text: 'Buy groceries', completed: false },
-			{ id: 2, text: 'Walk the dog', completed: false },
-			{ id: 3, text: 'Do laundry', completed: false },
-		]
-		return todos;
-	}
+  dbClient = () => {
+    const turso = createClient({
+      url: this.env.TURSO_CONNECTION_URL!,
+      authToken: this.env.TURSO_AUTH_TOKEN,
+    });
+    const db = drizzle(turso);
+    return db;
+  };
+
+  async getTodos(userID: string) {
+    const db = this.dbClient();
+    const result = await db.select().from(todos).all();
+    return result;
+  }
 }
